@@ -3,6 +3,7 @@
 
 # The purpose of this project is to remember basic Python syntax, classes, and good coding practices.
 
+from distutils.core import setup
 import random
 import time
 
@@ -19,10 +20,10 @@ class Player:
 
 def startGame():
     # Prompts the user to input number of players, and creates an object of class Player for each player, stored in dict players.
-    players = {}  # dictionary of players
-    order = []  # order of players
+    who = {}  # dictionary of players
+    when = []  # order of players
     numPlayers = 0
-    print("Welcome to Blackjack!".center(88))
+    print("- - - - - Welcome to Blackjack! - - - - -".center(88))
     time.sleep(0.3)
     print(("This is a very simple version of the game, so players can only 'hit' or 'stand'.").center(88))
     time.sleep(0.3)
@@ -40,14 +41,14 @@ def startGame():
     while i < numPlayers:
         name = input("Enter player " + str(i+1) + "'s name: ")
         name = name.strip().lower().capitalize()  # We are polite. We capitalize our names.
-        if name == "Dealer":
+        if name == "Dealer" or name in when:
             print(("Please name yourself something else.").center(88))
             continue
-        players[name] = Player()  # creates an object of class Player, stores it in dict players
-        order.append(name)  # keeps track of player order (dictionaries are unordered)
+        who[name] = Player()  # creates an object of class Player, stores it in dict players
+        when.append(name)  # keeps track of player order (dictionaries are unordered)
         i += 1
-    players["Dealer"] = Player()  # The dealer is also a Player object, for easier score-keeping.
-    return players, order
+    who["Dealer"] = Player()  # The dealer is also a Player object, for easier score-keeping.
+    return who, when
 
 
 def buildDeck():
@@ -200,11 +201,87 @@ def payout(who, when):
         time.sleep(1)
 
 
+def playAgain(who, when):
+    """ Displays all players balances, and gives some free credits to players who have reached 0.
+        Players are then prompted to play again, reset the game, or exit."""
+    print(("- - - - - PLAYER BALANCES - - - - -").center(88))
+    for name in when:
+        print((name + " has " + who[name].bal + " credits.").center(88))
+    time.sleep(1)
+    for name in when:
+        answering = True
+        while answering:
+            if who[name].bal == 0:
+                # The player has no balance, they can restart with 100.
+                ans = input(name + ", keep playing with 100 credits (type 'y' or 'n')? ")
+                if ans.lower().strip() == "y":
+                    print((name + " will continue playing.").center(88))
+                    who[name].bal = 100
+                    answering = False
+                elif ans.lower().strip() == 'n':
+                    print((name + " has been removed from the game.").center(88))
+                    when.remove(name)
+                    who.pop(name)
+                    answering = False
+                else:
+                    print(("Invalid Response.").center(88))
+            else:
+                ans = input(name + ", keep playing (type 'y' or 'n')? ")
+                if ans.lower().strip() == "y":
+                    print((name + " will continue playing.").center(88))
+                    answering = False
+                elif ans.lower().strip() == "n":
+                    print((name + " has been removed from the game.").center(88))
+                    when.remove(name)
+                    who.pop(name)
+                    answering = False
+                else:
+                    print(("Invalid Response.").center(88))
+    if len(when) == 0:
+        # All players have quit. Endgame is set to true.
+        return True, False, who, when
+    else:
+        answering = True
+        print(("- - - - - Play Again? - - - - -").center(88))
+        print(("To play again with players " + str(when) + ", type 'y'.").center(88))
+        print(("To add more players, type 'a'.").center(88))
+        print(("To quit, type 'q'.").center(88))
+        while answering:
+            ans = input()
+            if ans == "y":
+                answering = False
+                return False, False, who, when
+            elif ans == "a":
+                who, when = addPlayers(who, when)
+            elif ans == "q":
+                answering = False
+                return True, False, who, when
+            else:
+                print(("Invalid Response.").center(88))
+
+
+def addPlayers(who, when):
+    numPlayers = len(when)
+    maxAdd = 6 - len(when)  # Maximum number of players who can join
+    adding = True
+    while adding:
+        try:
+            
+
+
+
 if __name__ == "__main__":
-    players, order = startGame()
-    deck = buildDeck()
-    players, deck = betDeal(players, order, deck)
-    showTable(players, order)
-    players = playGame(players, order, deck)
-    players = payout(players, order)
+    endGame = False
+    setupGame = True
+    while endGame == False:
+        if setupGame == True:
+            players, order = startGame()
+            setupGame = False
+        deck = buildDeck()
+        players, deck = betDeal(players, order, deck)
+        showTable(players, order)
+        players = playGame(players, order, deck)
+        players = payout(players, order)
+        endGame, setupGame, players, order = playAgain(players, order)
+    print(("Thanks for playing!").center(88))
     
