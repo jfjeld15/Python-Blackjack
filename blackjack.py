@@ -60,7 +60,11 @@ def buildDeck():
 def betDeal(who, when, cards):
     """ Players place their bets, and the cards are dealt for the round. Cards are removed from the deck
         as they are dealt, and scores are calculated for all players."""
+    who["Dealer"].hand = []  # reset the dealers hand in case it is not the first game.
+    who["Dealer"].bust = False
     for name in when:
+        who[name].hand = []  # reset any players hands who continued from a previous game
+        who[name].bust = False
         betting = True
         while betting:
             bet = input(name + ', Place your bet (type "bal" to see your balance): ')
@@ -127,6 +131,7 @@ def playGame(who, when, cards):
     for name in when:
         playing = True
         while playing:
+            print(("----" + name + "'s hand: " + str(who[name].hand) + "----").center(88))
             ans = input(name + ", will you hit or stand? (type 'h', 's', or 'v' to view the table): ")
             if ans.lower().strip() == "s":
                 print((name + " stands.").center(88))
@@ -135,12 +140,13 @@ def playGame(who, when, cards):
                 who[name].hand.append(cards.pop(0))  # removes it from the deck, gives it to the player.
                 who[name].score = count(who[name])  # add score
                 if who[name].score > 21:
-                    print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
+                    print(("----" + name + "'s hand: " + str(who[name].hand) + "----").center(88))
                     print((name + " busts!").center(88))
                     who[name].bust = True
                     playing = False
                 else:
-                    print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
+                    # They have not busted yet. Prompt another move.
+                    continue
             elif ans.lower().strip() == "v":
                 showTable(who, when)
             else:
@@ -197,62 +203,69 @@ def payout(who, when):
             who[name].bal += 2*who[name].bet
         else:
             # The player busts. Dealer wins.
-            print(("Dealer wins! Try again, " + name + ".").center(88))
+            print((name + " busted! Try again, " + name + ".").center(88))
         time.sleep(1)
+    return who
 
 
 def playAgain(who, when):
     """ Displays all players balances, and gives some free credits to players who have reached 0.
         Players are then prompted to play again, reset the game, or exit."""
+    removeList = []
     print(("- - - - - PLAYER BALANCES - - - - -").center(88))
     for name in when:
-        print((name + " has " + who[name].bal + " credits.").center(88))
+        print((name + " has " + str(who[name].bal) + " credits.").center(88))
     time.sleep(1)
     for name in when:
         answering = True
         while answering:
             if who[name].bal == 0:
                 # The player has no balance, they can restart with 100.
-                ans = input(name + ", keep playing with 100 credits (type 'y' or 'n')? ")
+                ans = input(name + ", keep playing with 100 credits? (type 'y' or 'n'): ")
                 if ans.lower().strip() == "y":
                     print((name + " will continue playing.").center(88))
                     who[name].bal = 100
                     answering = False
                 elif ans.lower().strip() == 'n':
                     print((name + " has been removed from the game.").center(88))
-                    when.remove(name)
-                    who.pop(name)
+                    removeList.append(name)
                     answering = False
                 else:
                     print(("Invalid Response.").center(88))
             else:
-                ans = input(name + ", keep playing (type 'y' or 'n')? ")
+                ans = input(name + ", keep playing? (type 'y' or 'n'): ")
                 if ans.lower().strip() == "y":
                     print((name + " will continue playing.").center(88))
                     answering = False
                 elif ans.lower().strip() == "n":
                     print((name + " has been removed from the game.").center(88))
-                    when.remove(name)
-                    who.pop(name)
+                    removeList.append(name)
                     answering = False
                 else:
                     print(("Invalid Response.").center(88))
+    for name in removeList:
+        # The next 2 lines remove players who have quit.
+        when.remove(name)
+        who.pop(name)
     if len(when) == 0:
         # All players have quit. Endgame is set to true.
         return True, False, who, when
     else:
         answering = True
         print(("- - - - - Play Again? - - - - -").center(88))
-        print(("To play again with players " + str(when) + ", type 'y'.").center(88))
-        print(("To add more players, type 'a'.").center(88))
-        print(("To quit, type 'q'.").center(88))
         while answering:
+            print(("To play again with players " + str(when) + ", type 'y'.").center(88))
+            print(("To add more players, type 'a'.").center(88))
+            print(("To quit, type 'q'.").center(88))
             ans = input()
             if ans == "y":
                 answering = False
                 return False, False, who, when
             elif ans == "a":
-                who, when = addPlayers(who, when)
+                if len(when) == 6:
+                    print(("There are too many players to add more.").center(88))
+                else:
+                    who, when = addPlayers(who, when)
             elif ans == "q":
                 answering = False
                 return True, False, who, when
@@ -261,13 +274,27 @@ def playAgain(who, when):
 
 
 def addPlayers(who, when):
-    numPlayers = len(when)
+    numAdd = 6
     maxAdd = 6 - len(when)  # Maximum number of players who can join
-    adding = True
-    while adding:
+    while numAdd < 1 or numAdd > maxAdd:
         try:
-            
-
+            numAdd = int(input("How many players will be added (1-" + str(maxAdd) + ")? "))
+        except ValueError:
+            print(("Please enter a value between 1 and " + str(maxAdd) + ".").center(88))
+        else:
+            if numAdd < 1 or numAdd > maxAdd:
+                print(("Please enter a value between 1 and " + str(maxAdd) + ".").center(88))
+    i = 0
+    while i < numAdd:
+        name = input("Enter player " + str(len(when)+1) + "'s name: ")
+        name = name.strip().lower().capitalize()  # We are polite. We capitalize our names.
+        if name == "Dealer" or name in when:
+            print(("Please name yourself something else.").center(88))
+            continue
+        who[name] = Player()  # creates an object of class Player, stores it in dict players
+        when.append(name)  # keeps track of player order (dictionaries are unordered)
+        i += 1
+    return who, when
 
 
 if __name__ == "__main__":
