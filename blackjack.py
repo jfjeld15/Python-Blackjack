@@ -19,6 +19,8 @@ def startGame():
     # Prompts the user to input number of players, and creates an object of class Player for each player, stored in dict players.
     players = {}  # dictionary of players
     order = []  # order of players
+    print("Welcome to Blackjack!\nThis is a very simple version of the game, so players can only ""hit"" or ""stay"". \
+           no other moves may be played, and no additional bets can be made after the betting period, such as insurance.")
     numPlayers = int(input("How many players will be playing (1-6)? "))
     i = 0
     while i < numPlayers:
@@ -41,7 +43,8 @@ def buildDeck():
 
 
 def betDeal(who, when, cards):
-    # Players place their bets, and the cards are dealt for the round.
+    """ Players place their bets, and the cards are dealt for the round. Cards are removed from the deck
+        as they are dealt, and scores are calculated for all players."""
     for name in when:
         betting = True
         while betting:
@@ -61,13 +64,15 @@ def betDeal(who, when, cards):
     for i in range(2):  # all players (and the dealer) are dealt 2 cards
         for name in when:
             who[name].hand.append(cards.pop(0))  # removes it from the deck, gives it to the player.
-            who[name].score = count(who[name])
+            who[name].score = count(who[name])  # add score
         who["Dealer"].hand.append(cards.pop(0))  # removes it from the deck, gives it to the dealer.
         who["Dealer"].score = count(who["Dealer"])
-    return who
+    return who, cards
 
 
 def count(player):
+    """ Counts the player's total score. Aces are counted last to determine if they are 1 or 11. This numerical score
+        is never displayed to the player."""
     total = 0
     comeback = 0
     for card in player.hand:
@@ -90,8 +95,12 @@ def count(player):
     return total
 
 
+def playGame():
+    """ Players take turns. They may only hit"""
+
 if __name__ == "__main__":
     players, order = startGame()
     deck = buildDeck()
-    players = betDeal(players, order, deck)
+    players, deck = betDeal(players, order, deck)
+    playGame(players, order, deck)
     
