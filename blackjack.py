@@ -23,15 +23,19 @@ def startGame():
     order = []  # order of players
     numPlayers = 0
     print("Welcome to Blackjack!".center(88))
-    time.sleep(1)
+    time.sleep(0.3)
     print(("This is a very simple version of the game, so players can only 'hit' or 'stand'.").center(88))
-    time.sleep(1)
+    time.sleep(0.3)
     print(("No other moves may be played, and no additional bets can be made after the initial bets.").center(88))
     time.sleep(1)
     while numPlayers < 1 or numPlayers > 6:
-        numPlayers = int(input("How many players will be playing (1-6)? "))
-        if numPlayers < 1 or numPlayers > 6:
+        try:
+            numPlayers = int(input("How many players will be playing (1-6)? "))
+        except ValueError:
             print(("Please enter a value between 1 and 6.").center(88))
+        else:
+            if numPlayers < 1 or numPlayers > 6:
+                print(("Please enter a value between 1 and 6.").center(88))
     i = 0
     while i < numPlayers:
         name = input("Enter player " + str(i+1) + "'s name: ")
@@ -59,15 +63,16 @@ def betDeal(who, when, cards):
         betting = True
         while betting:
             bet = input(name + ', Place your bet (type "bal" to see your balance): ')
-            if bet.lower().strip() == 'bal':
-                print((name + " has " + str(who[name].bal) + " credits.").center(88))
-            elif (int(bet) > who[name].bal) or (int(bet) <= 0):
-                print(("Invalid credits bet! Please bet between 0 and " + str(who[name].bal) + " credits.").center(88))
-            elif (int(bet) < who[name].bal) and (int(bet) > 0):
-                who[name].bal -= int(bet)
-                who[name].bet = int(bet)
-                betting = False  # The player has successfully made a bet
-            else:
+            try:
+                if bet.lower().strip() == 'bal':
+                    print((name + " has " + str(who[name].bal) + " credits.").center(88))
+                elif (int(bet) > who[name].bal) or (int(bet) <= 0):
+                    print(("Invalid credits bet! Please bet between 1 and " + str(who[name].bal) + " credits.").center(88))
+                elif (int(bet) <= who[name].bal) and (int(bet) > 0):
+                    who[name].bal -= int(bet)
+                    who[name].bet = int(bet)
+                    betting = False  # The player has successfully made a bet
+            except ValueError:
                 print(("Invalid response.").center(88))
         print((name + " has bet " + str(who[name].bet) + " credits.").center(88))
     # Betting has been completed. Now the dealer will deal to the players in order.
@@ -121,7 +126,7 @@ def playGame(who, when, cards):
     for name in when:
         playing = True
         while playing:
-            ans = input(name + ", will you hit or stand? (type 'h', 's', or 'view' to view the table): ")
+            ans = input(name + ", will you hit or stand? (type 'h', 's', or 'v' to view the table): ")
             if ans.lower().strip() == "s":
                 print((name + " stands.").center(88))
                 playing = False
@@ -130,17 +135,17 @@ def playGame(who, when, cards):
                 who[name].score = count(who[name])  # add score
                 if who[name].score > 21:
                     print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
-                    print((name + " busted!").center(88))
+                    print((name + " busts!").center(88))
                     who[name].bust = True
                     playing = False
                 else:
                     print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
-            elif ans.lower().strip() == "view":
+            elif ans.lower().strip() == "v":
                 showTable(who, when)
             else:
                 print(("Invalid Response.").center(88))
     print(("----All Players have played----").center(88))
-    time.sleep(2)
+    time.sleep(1)
     playing = True
     while playing:
         print(("Dealer's hand: " + str(who["Dealer"].hand)).center(88))
@@ -156,14 +161,50 @@ def playGame(who, when, cards):
             playing = False
         else:
             # The dealer has busted.
-            print(("The Dealer busted!").center(88))
+            print(("The Dealer busts!").center(88))
             who["Dealer"].bust = True
+            time.sleep(1)
             playing = False
+    return who  # I do not need to return the deck, as all players have played.
+
+
+def payout(who, when):
+    # Compares players scores with the dealer's score, and updates player balances.
+    print(("- - - - - PAYOUT - - - - -").center(88))
+    time.sleep(1)
+    for name in when:
+        if who[name].bust == False and who["Dealer"].bust == False:
+            # Both the player and the dealer did not bust. Compare their scores.
+            if who[name].score > who["Dealer"].score and who[name].score == 21:
+                # The player has a Blackjack
+                print(("Blackjack! " + name + " receives " + str(2.5*who[name].bet) + " credits.").center(88))
+                who[name].bal += 2.5*who[name].bet
+            elif who[name].score > who["Dealer"].score:
+                # Not a blackjack, but the player still won
+                print((name + " receives " + str(2*who[name].bet) + " credits.").center(88))
+                who[name].bal += 2*who[name].bet
+            elif who[name].score == who["Dealer"].score:
+                # Nobody wins, the money is returned
+                print(("Draw. " + name + " is returned " + str(who[name].bet) + " credits.").center(88))
+                who[name].bal += who[name].bet
+            elif who[name].score < who["Dealer"].score:
+                # The dealer wins. No money is returned.
+                print(("Dealer wins! Try again, " + name + ".").center(88))
+        elif who[name].bust == False and who["Dealer"].bust == True:
+            # The Dealer busted, and the player did not.
+            print((name + " receives " + str(2*who[name].bet) + " credits.").center(88))
+            who[name].bal += 2*who[name].bet
+        else:
+            # The player busts. Dealer wins.
+            print(("Dealer wins! Try again, " + name + ".").center(88))
+        time.sleep(1)
+
 
 if __name__ == "__main__":
     players, order = startGame()
     deck = buildDeck()
     players, deck = betDeal(players, order, deck)
     showTable(players, order)
-    playGame(players, order, deck)
+    players = playGame(players, order, deck)
+    players = payout(players, order)
     
