@@ -20,11 +20,17 @@ def startGame():
     players = {}  # dictionary of players
     order = []  # order of players
     numPlayers = int(input("How many players will be playing (1-6)? "))
-    for i in range(numPlayers):
+    i = 0
+    while i < numPlayers:
         name = input("Enter player " + str(i+1) + "'s name: ")
-        name.capitalize()  # We are polite. We capitalize our names.
+        name = name.strip().lower().capitalize()  # We are polite. We capitalize our names.
+        if name == "Dealer":
+            print("Please name yourself something else.")
+            continue
         players[name] = Player()  # creates an object of class Player, stores it in dict players
         order.append(name)  # keeps track of player order (dictionaries are unordered)
+        i += 1
+    players["Dealer"] = Player()  # The dealer is also a Player object, for easier score-keeping.
     return players, order
 
 
@@ -52,9 +58,37 @@ def betDeal(who, when, cards):
                 print("Invalid response.")
         print(name + " has bet " + str(who[name].bet) + " credits.")
     # Betting has been completed. Now the dealer will deal to the players in order.
-    for name in when:
-        
+    for i in range(2):  # all players (and the dealer) are dealt 2 cards
+        for name in when:
+            who[name].hand.append(cards.pop(0))  # removes it from the deck, gives it to the player.
+            who[name].score = count(who[name])
+        who["Dealer"].hand.append(cards.pop(0))  # removes it from the deck, gives it to the dealer.
+        who["Dealer"].score = count(who["Dealer"])
     return who
+
+
+def count(player):
+    total = 0
+    comeback = 0
+    for card in player.hand:
+        if card != 'A' or 'J' or 'Q' or 'K':
+            total += int(card)
+        elif card == 'J' or 'Q' or 'K':
+            total += 10
+        else:
+            # The card is an ace. This is tricky.
+            comeback += 1  # We must count the other cards first to decide if this is a 1 or 11.
+    if comeback > 0:
+        for i in range(comeback):
+            if (total + 11) <= 21:
+                total += 11  # We try to add 11 first.
+            elif (total + 1) <= 21:
+                total += 1
+            else:
+                # if neither are <=21, the player has busted! It should not matter what is added.
+                total += 1
+    return total
+
 
 if __name__ == "__main__":
     players, order = startGame()
