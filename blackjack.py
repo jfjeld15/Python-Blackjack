@@ -4,15 +4,17 @@
 # The purpose of this project is to remember basic Python syntax, classes, and good coding practices.
 
 import random
+import time
 
 
 class Player:
     # Default player class. This is updated as players play the game.
     def __init__(self):
         self.hand = []  # Player starts with an empty hand
-        self.bal = 500 # starting balance
-        self.score = 0 # score (out of 21)
-        self.bet = 0 # what the player bets on the current game
+        self.bal = 500  # starting balance
+        self.score = 0  # score (out of 21)
+        self.bet = 0  # what the player bets on the current game
+        self.bust = False  # set to true if the player busts
 
 
 def startGame():
@@ -21,8 +23,11 @@ def startGame():
     order = []  # order of players
     numPlayers = 0
     print("Welcome to Blackjack!".center(88))
+    time.sleep(1)
     print(("This is a very simple version of the game, so players can only 'hit' or 'stand'.").center(88))
+    time.sleep(1)
     print(("No other moves may be played, and no additional bets can be made after the initial bets.").center(88))
+    time.sleep(1)
     while numPlayers < 1 or numPlayers > 6:
         numPlayers = int(input("How many players will be playing (1-6)? "))
         if numPlayers < 1 or numPlayers > 6:
@@ -118,13 +123,15 @@ def playGame(who, when, cards):
         while playing:
             ans = input(name + ", will you hit or stand? (type 'h', 's', or 'view' to view the table): ")
             if ans.lower().strip() == "s":
+                print((name + " stands.").center(88))
                 playing = False
             elif ans.lower().strip() == "h":
                 who[name].hand.append(cards.pop(0))  # removes it from the deck, gives it to the player.
                 who[name].score = count(who[name])  # add score
                 if who[name].score > 21:
                     print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
-                    print(("You busted!").center(88))
+                    print((name + " busted!").center(88))
+                    who[name].bust = True
                     playing = False
                 else:
                     print(("----" + name + ": " + str(who[name].hand) + "----").center(88))
@@ -133,16 +140,26 @@ def playGame(who, when, cards):
             else:
                 print(("Invalid Response.").center(88))
     print(("----All Players have played----").center(88))
+    time.sleep(2)
     playing = True
     while playing:
         print(("Dealer's hand: " + str(who["Dealer"].hand)).center(88))
+        time.sleep(1)
         who["Dealer"].score = count(who["Dealer"])
         if who["Dealer"].score < 17:
-                    print(("The dealer hits").center(88))
-                    who["Dealer"].hand.append(cards.pop(0))  # removes it from the deck, gives it to the dealer.
-                elif who["Dealer"].score >= 17 and who["Dealer"].score <= 21:
-                    print(("The dealer stands.").center(88))
-                    playing = False
+            print(("The dealer hits").center(88))
+            who["Dealer"].hand.append(cards.pop(0))  # removes it from the deck, gives it to the dealer.
+            time.sleep(1)
+        elif who["Dealer"].score >= 17 and who["Dealer"].score <= 21:
+            print(("The Dealer stands.").center(88))
+            time.sleep(1)
+            playing = False
+        else:
+            # The dealer has busted.
+            print(("The Dealer busted!").center(88))
+            who["Dealer"].bust = True
+            playing = False
+
 if __name__ == "__main__":
     players, order = startGame()
     deck = buildDeck()
