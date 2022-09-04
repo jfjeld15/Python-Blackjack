@@ -129,6 +129,11 @@ def playGame(who, when, cards):
         playing = True
         while playing:
             print(("----" + name + "'s hand: " + str(who[name].hand) + "----").center(88))
+            if who[name].score == 21:
+                # The player automatically stands if they have a Blackjack.
+                print((name + " stands. (Blackjack)").center(88))
+                playing = False
+                continue
             ans = input(name + ", will you hit or stand? (type 'h' or 's', or 'v' to view the table): ")
             if ans.lower().strip() == "s":
                 print((name + " stands.").center(88))
@@ -141,9 +146,7 @@ def playGame(who, when, cards):
                     print((name + " busts!").center(88))
                     who[name].bust = True
                     playing = False
-                else:
-                    # They have not busted yet. Prompt another move.
-                    continue
+                    # Otherwise, they have not busted yet. Prompt another move.
             elif ans.lower().strip() == "v":
                 showTable(who, when)
             else:
